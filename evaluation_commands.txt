@@ -1,0 +1,83 @@
+실습 과제 1: 처음 보는 환경에서도 잘 걷는 Ant 만들기 - 평가 명령어
+======================================================================
+
+제출 모델
+---------
+- 체크포인트: logs/rsl_rl/ant/2026-10-03_18-35-05_ppo_entropy_s1/model_999.pt
+- 학습 환경: Isaac-Ant-Terrain-v0 (지형 + 마찰 랜덤화), PPO entropy 계수 0.005, seed 1, 1000 iteration
+- 관측(60차원), 행동(8차원), 신경망 구조(400-200-100), 보상 함수는 원본 Isaac-Ant-v0과 동일합니다.
+  따라서 추가 인자 없이 원본 환경이나 지형만 바뀐 환경에서 그대로 실행됩니다.
+
+
+1. conda 환경 활성화
+--------------------
+conda activate lerobot-arena
+
+
+2. 모델 평가 명령어 (100개 환경, 한 에피소드)
+---------------------------------------------
+--task 는 평가하실 환경 이름으로 바꿔 주세요. 아래는 원본 환경 기준입니다.
+
+cd ~/IsaacLab_RS
+
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play_one_episode.py \
+    --task Isaac-Ant-v0 \
+    --seed 24 \
+    --num_envs 100 \
+    --checkpoint logs/rsl_rl/ant/2026-10-03_18-35-05_ppo_entropy_s1/model_999.pt
+
+저희 컴퓨터에서의 출력:
+    [RESULT] Episode reward total: mean=119.245499, std=20.474327
+    [RESULT] Episode steps: mean=931.010000, std=126.592772
+
+화면 없이 실행하려면 --headless 를 추가합니다.
+
+
+3. 한 에피소드 실행 + 영상 녹화
+-------------------------------
+cd ~/IsaacLab_RS
+
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play_one_episode.py \
+    --task Isaac-Ant-v0 \
+    --seed 24 \
+    --num_envs 1 \
+    --checkpoint logs/rsl_rl/ant/2026-10-03_18-35-05_ppo_entropy_s1/model_999.pt \
+    --video \
+    --video_length 960
+
+영상은 logs/rsl_rl/ant/2026-10-03_18-35-05_ppo_entropy_s1/videos/play/ 에 저장됩니다.
+
+
+4. 자체 평가 환경 (레포트에 사용한 "처음 보는 환경")
+--------------------------------------------------
+2번 명령어에서 --task 만 아래 이름으로 바꾸면 됩니다.
+이 환경들은 이 저장소의
+source/isaaclab_tasks/isaaclab_tasks/manager_based/classic/ant/ 에 등록되어 있으므로,
+이 저장소의 isaaclab_tasks 가 설치된 상태에서 실행해야 합니다.
+
+    task 이름                                조건                         저희 결과 (mean, std)
+    Isaac-Ant-Unseen-Slippery-v0             평지, 지면 마찰 0.2          122.193655, 25.211779
+    Isaac-Ant-Unseen-Boxes-v0                블록 격자 3~10 cm            79.341544, 28.779660
+    Isaac-Ant-Unseen-Boxes-Slippery-v0       블록 격자 + 지면 마찰 0.2    72.900486, 26.558479
+    Isaac-Ant-Unseen-Tall-Boxes-v0           블록 격자 10~15 cm           45.318912, 19.525882
+    Isaac-Ant-Unseen-XTall-Boxes-v0          블록 격자 18~22 cm           12.294468, 5.689009
+    Isaac-Ant-Unseen-Wave-v0                 물결 지형                    81.697859, 26.603014
+
+예시:
+
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play_one_episode.py \
+    --task Isaac-Ant-Unseen-Boxes-v0 \
+    --seed 24 \
+    --num_envs 100 \
+    --checkpoint logs/rsl_rl/ant/2026-10-03_18-35-05_ppo_entropy_s1/model_999.pt
+
+
+5. 학습 재현 명령어 (참고)
+--------------------------
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Isaac-Ant-Terrain-v0 \
+    --headless \
+    --seed 1 \
+    --run_name ppo_entropy_s1 \
+    --max_iterations 1000 \
+    agent.algorithm.entropy_coef=0.005
